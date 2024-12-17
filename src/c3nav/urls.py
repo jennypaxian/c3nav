@@ -38,6 +38,12 @@ if settings.SERVE_ANYTHING:
         path('', include(c3nav.site.urls)),
     ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
+    if settings.ENABLE_LIVE:
+        import c3nav.live.urls
+        websocket_urlpatterns += [
+            path('live/', URLRouter(c3nav.live.urls.websocket_urlpatterns)),
+        ]
+
     if settings.ENABLE_MESH:
         websocket_urlpatterns += [
             path('mesh/', URLRouter(c3nav.mesh.urls.websocket_urlpatterns)),
