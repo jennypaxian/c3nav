@@ -1,8 +1,7 @@
 from django.urls import path
 
-from c3nav.live.consumers import LiveConsumer, LiveUIConsumer
+from c3nav.live.consumers import LiveMessageConsumer
 
 websocket_urlpatterns = [
-    path('ws', LiveConsumer.as_asgi()),
-    path('ui/ws', LiveUIConsumer.as_asgi()),
+    path('/ws/messages', LiveMessageConsumer.as_asgi())
 ]

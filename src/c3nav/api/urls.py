@@ -12,6 +12,7 @@ from c3nav.mapdata.api.mapdata import mapdata_api_router
 from c3nav.mapdata.api.updates import updates_api_router
 from c3nav.routing.api.positioning import positioning_api_router
 from c3nav.routing.api.routing import routing_api_router
+from c3nav.live.api import live_api_router
 
 """
 new API (v2)
@@ -19,6 +20,7 @@ new API (v2)
 ninja_api.add_router("/auth/", auth_api_router)
 ninja_api.add_router("/updates/", updates_api_router)
 ninja_api.add_router("/map/", map_api_router)
+ninja_api.add_router("/live/", live_api_router)
 ninja_api.add_router("/routing/", routing_api_router)
 ninja_api.add_router("/positioning/", positioning_api_router)
 ninja_api.add_router("/mapdata/", mapdata_api_router)

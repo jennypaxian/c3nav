@@ -90,6 +90,11 @@ ninja_api = c3navAPI(
                 "description": "Determine your position",
             },
             {
+                "name": "live",
+                "x-displayName": "Live",
+                "description": "Send your live location",
+            },
+            {
                 "name": "mapdata-root",
                 "x-displayName": "Root map data",
                 "description": "Objects that don't belong to a level or space",
@@ -122,7 +127,7 @@ ninja_api = c3navAPI(
             },
             {
                 "name": "Main",
-                "tags": ["map", "routing", "positioning"],
+                "tags": ["map", "routing", "positioning", "live"],
             },
             {
                 "name": "Raw map data",
