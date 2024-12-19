@@ -3,7 +3,7 @@ import operator
 import os
 from functools import reduce
 from itertools import chain
-from operator import attrgetter
+from operator import attrgetter, itemgetter
 
 from django.conf import settings
 from django.core.cache import cache
@@ -398,11 +398,12 @@ class EditorFormBase(I18nModelFormMixin, ModelForm):
 
 def create_editor_form(editor_model):
     possible_fields = [
-        'slug', 'name', 'title', 'title_plural', 'help_text', 'position_secret', 'icon', 'join_edges',
-        'up_separate', 'bssid', 'main_point', 'external_url', 'hub_import_type', 'walk', 'ordering',
-        'category', 'width', 'groups', 'height', 'color', 'in_legend', 'priority', 'hierarchy', 'icon_name',
-        'base_altitude', 'waytype', 'access_restriction', 'default_height', 'door_height', 'outside', 'can_search',
-        'can_describe', 'geometry', 'single', 'altitude', 'short_label', 'origin_space', 'target_space', 'data',
+        'slug', 'name', 'title', 'title_plural', 'help_text', 'position_secret', 'icon', 'join_edges', 'todo',
+        'up_separate', 'bssid', 'main_point', 'external_url', 'external_url_label', 'hub_import_type', 'walk',
+        'ordering', 'category', 'width', 'groups', 'height', 'color', 'in_legend', 'priority', 'hierarchy', 'icon_name',
+        'base_altitude', 'intermediate', 'waytype', 'access_restriction', 'default_height', 'door_height', 'outside',
+        'can_search', 'can_describe', 'geometry', 'single', 'altitude', 'level_index', 'short_label',
+        'origin_space', 'target_space', 'data',
         'comment', 'slow_down_factor', 'groundaltitude', 'node_number', 'wifi_bssid', 'bluetooth_address', "group",
         'ibeacon_uuid', 'ibeacon_major', 'ibeacon_minor', 'uwb_address', 'extra_seconds', 'speed', 'can_report_missing',
         "can_report_mistake", 'description', 'speed_up', 'description_up', 'avoid_by_default', 'report_help_text',
@@ -417,7 +418,7 @@ def create_editor_form(editor_model):
         'color_background', 'color_wall_fill', 'color_wall_border', 'color_door_fill', 'color_ground_fill',
         'color_obstacles_default_fill', 'color_obstacles_default_border', 'stroke_color', 'stroke_width',
         'stroke_opacity', 'fill_color', 'fill_opacity', 'interactive', 'point_icon', 'extra_data', 'show_label',
-        'show_geometry', 'external_url', 'show_label', 'show_geometry', 'external_url', 'default_geomtype',
+        'show_geometry', 'show_label', 'show_geometry', 'default_geomtype',
     ]
     field_names = [field.name for field in editor_model._meta.get_fields()
                    if not field.one_to_many and not isinstance(field, ManyToManyRel)]
@@ -492,3 +493,39 @@ class GraphEditorActionForm(Form):
 
     def clean_clicked_position(self):
         return GeometryField(geomtype='point').to_python(self.cleaned_data['clicked_position'])
+
+
+class DoorGraphForm(Form):
+    def __init__(self, *args, request, spaces, nodes, edges, **kwargs):
+        self.request = request
+        self.edges = edges
+        self.restrictions = {a.pk: a for a in AccessRestriction.qs_for_request(request)}
+        super().__init__(*args, **kwargs)
+
+        choices = (
+            (-1, '--- no edge'),
+            (0, '--- edge without restriction'),
+            *((pk, restriction.title) for pk, restriction in self.restrictions.items())
+        )
+
+        for (from_node, to_node), edge in sorted(edges.items(), key=itemgetter(0)):
+            self.fields[f'edge_{from_node}_{to_node}'] = ChoiceField(
+                choices=choices,
+                label=f'{spaces[nodes[from_node].space_id]} → {spaces[nodes[to_node].space_id]}',
+                initial=-1 if edge is None else (edge.access_restriction_id or 0),
+            )
+
+    def save(self):
+        for (from_node, to_node), edge in self.edges.items():
+            cleaned_value = int(self.cleaned_data[f'edge_{from_node}_{to_node}'])
+            if edge is None:
+                if cleaned_value == -1:
+                    continue
+                GraphEdge.objects.create(from_node_id=from_node, to_node_id=to_node,
+                                         access_restriction_id=(cleaned_value or None))
+            else:
+                if cleaned_value == -1:
+                    edge.delete()
+                elif edge.access_restriction_id != (cleaned_value or None):
+                    edge.access_restriction_id = (cleaned_value or None)
+                    edge.save()

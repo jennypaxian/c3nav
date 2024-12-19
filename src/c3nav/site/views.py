@@ -40,7 +40,7 @@ from c3nav.mapdata.models.locations import (LocationGroup, LocationRedirect, Pos
 from c3nav.mapdata.models.report import Report, ReportUpdate
 from c3nav.mapdata.schemas.models import SlimLocationSchema
 from c3nav.mapdata.utils.locations import (get_location_by_id_for_request, get_location_by_slug_for_request,
-                                           levels_by_short_label_for_request)
+                                           levels_by_level_index_for_request)
 from c3nav.mapdata.utils.user import can_access_editor, get_user_data
 from c3nav.mapdata.views import set_tile_access_cookie
 from c3nav.routing.models import RouteOptions
@@ -52,16 +52,16 @@ if settings.METRICS:
     from prometheus_client import Counter
 
 
-def check_location(location: Optional[str], request) -> Optional[SpecificLocation]:
-    if location is None:
+def check_location(location_slug: Optional[str], request) -> Optional[Location]:
+    if location_slug is None:
         return None
 
-    location = get_location_by_slug_for_request(location, request)
+    location = get_location_by_slug_for_request(location_slug, request)
     if location is None:
         return None
 
     if isinstance(location, LocationRedirect):
-        location: Location = location.target
+        result = location.target
     if location is None:
         return None
 
@@ -134,7 +134,7 @@ def map_index(request, mode=None, slug=None, slug2=None, details=None, options=N
         'nearby': True if nearby else False,
     }
 
-    levels = levels_by_short_label_for_request(request)
+    levels = levels_by_level_index_for_request(request)
 
     level = levels.get(pos.level, None) if pos else None
     if level is not None:
@@ -198,7 +198,7 @@ def map_index(request, mode=None, slug=None, slug2=None, details=None, options=N
     from c3nav.mapdata.models.theme import Theme
     ctx = {
         'bounds': json.dumps(Source.max_bounds(), separators=(',', ':')),
-        'levels': json.dumps(tuple((level.pk, level.short_label) for level in levels.values()), separators=(',', ':')),
+        'levels': json.dumps(tuple((level.pk, level.level_index, level.short_label) for level in levels.values()), separators=(',', ':')),
         'state': json.dumps(state, separators=(',', ':'), cls=DjangoJSONEncoder),
         'tile_cache_server': settings.TILE_CACHE_SERVER,
         'initial_level': settings.INITIAL_LEVEL,
