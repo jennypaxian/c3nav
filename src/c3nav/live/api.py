@@ -34,14 +34,42 @@ class ExampleSchema(BaseSchema):
             raise ValueError("some_bool must be true")
         return some_bool
 
+class LiveBaseResponseSchema(BaseSchema):
+    """
+    This schema contains the base response for live location api
+    """
+    ttl: int = APIField(
+        title="Time to Live",
+        description="How long your given token will live until it expires and your pubkey needs to be enrolled again"
+    )
+
 class EnrollRequestSchema(BaseSchema):
     """
     This schema contains the request format for enrolling a pubkey
     """
     pubkey: Annotated[List[Annotated[int, Lt(256), Ge(0)]], MinLen(256), MaxLen(256)] = APIField(
         title="AES 256 pubkey",
-        description="Your client-side public key for live location sharing"
+        description="Your client-side public key for live location sharing",
     )
+
+class EnrollResponseSchema(LiveBaseResponseSchema):
+    """
+    This schema contains the response format for enrolling a pubkey
+    """
+
+class AnnounceRequestSchema(BaseSchema):
+    """
+    This schema contains the request format for announcing a pubkey
+    """
+    token: str = APIField(
+        title="Decrypted token",
+        description="The token received by enroll, decrypted with your private key"
+    )
+
+class AnnounceResponseSchema(LiveBaseResponseSchema):
+    """
+    This schema contains the response for after proving you own the private key to a pubkey by decrypting a token
+    """
 
 @live_api_router.get('/get/', summary="get example",
                      description="Returns example about the current example",
@@ -54,8 +82,18 @@ def get_example(request):
     )
 
 
-@live_api_router.put('/enroll/', summary="Enroll public key",
+@live_api_router.put('/keys/enroll/', summary="Enroll public key",
                      description="Enroll your public key for live location sharing",
                      response={200: EnrollRequestSchema, **validate_responses, **auth_responses})
 def put_example(request, pubkey: EnrollRequestSchema):
-    return pubkey
+    return EnrollResponseSchema(
+        ttl=20
+    )
+
+@live_api_router.put('/keys/announce/', summary="Announce public key",
+                     description="Prove that you own the private key to this public key by sending the decrypted token",
+                     response={200: AnnounceResponseSchema, **validate_responses, **auth_responses})
+def put_announce(request, pubkey: AnnounceRequestSchema):
+    return AnnounceResponseSchema(
+        ttl=20
+    )
