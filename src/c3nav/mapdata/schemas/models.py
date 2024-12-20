@@ -32,6 +32,10 @@ class LevelSchema(SpecificLocationSchema, DjangoModelSchema):
         title="short label (for level selector)",
         description="unique among levels",
     )
+    level_index: NonEmptyStr = APIField(
+        title="level index (for coordinates)",
+        description="unique among levels",
+    )
     on_top_of: Union[
         Annotated[PositiveInt, APIField(title="level ID", description="level this level is on top of", example=1)],
         Annotated[None, APIField(title="null", description="this is a main level, not on top of any other")]
@@ -831,6 +835,7 @@ class LocationDisplay(BaseSchema):
         description="space",
         example=3,
     )
+    external_url: Optional[DisplayURL] = None
     display: list[
         tuple[
             Annotated[NonEmptyStr, APIField(title="field title")],

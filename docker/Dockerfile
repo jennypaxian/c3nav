@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.6@sha256:ac85f380a63b13dfcefa89046420e1781752bab202122f8f50032edf31be0021
+# syntax=docker/dockerfile:1.12@sha256:93bfd3b68c109427185cd78b4779fc82b484b0b7618e36d0f104d4d801e66d25
 FROM ubuntu:noble-20241118.1@sha256:80dd3c3b9c6cecb9f1667e9290b3bc61b78c2678c02cbdae5f0fea92cc6734ab as base
 ARG BASE_IMAGE_NAME=ubuntu:noble-20241118.1
 ARG BASE_IMAGE_DIGEST=sha256:80dd3c3b9c6cecb9f1667e9290b3bc61b78c2678c02cbdae5f0fea92cc6734ab
@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt_$TARGETARCH --mount=type=tmp
     libpq5=16.6-0ubuntu0.24.04.1 \
     # renovate: srcname=postgresql-16
     postgresql-client-16=16.6-0ubuntu0.24.04.1 \
-    curl=8.5.0-2ubuntu10.5 \
+    curl=8.5.0-2ubuntu10.6 \
     # renovate: srcname=pcre3
     libpcre3=2:8.39-15build1 \
     # renovate: srcname=librsvg
@@ -41,6 +41,7 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt_$TARGETARCH --mount=type=tmp
     gettext \
     tzdata=2024a-3ubuntu1.1 \
     ca-certificates=20240203 \
+    # renovate: srcname=libzstd
     zstd=1.5.5+dfsg2-2build1.1
 ENV PATH="/usr/lib/postgresql/16/bin/:$PATH"
 
@@ -57,7 +58,7 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt_$TARGETARCH --mount=type=tmp
     # renovate: srcname=cairo
     libcairo2-dev=1.18.0-3build1 \
     libgirepository1.0-dev=1.80.1-1 \
-    # renovate: srcname=libmemcached \
+    # renovate: srcname=libmemcached
     libmemcached-dev=1.1.4-1.1build3
 
 

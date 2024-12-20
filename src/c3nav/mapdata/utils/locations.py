@@ -193,14 +193,14 @@ def locations_by_slug_for_request(request) -> Mapping[str, LocationSlug]:
     return locations
 
 
-def levels_by_short_label_for_request(request) -> Mapping[str, Level]:
-    cache_key = 'mapdata:levels:by_short_label:%s' % AccessPermission.cache_key_for_request(request)
+def levels_by_level_index_for_request(request) -> Mapping[str, Level]:
+    cache_key = 'mapdata:levels:by_level_index:%s' % AccessPermission.cache_key_for_request(request)
     levels = proxied_cache.get(cache_key, None)
     if levels is not None:
         return levels
 
     levels = OrderedDict(
-        (level.short_label, level)
+        (level.level_index, level)
         for level in Level.qs_for_request(request).filter(on_top_of_id__isnull=True).order_by('base_altitude')
     )
 
@@ -213,7 +213,7 @@ def get_location_by_id_for_request(pk, request):
     if isinstance(pk, str):
         if pk.isdigit():
             pk = int(pk)
-        elif pk.startswith('p:'):
+        elif pk.startswith('m:'):
             try:
                 # return immediately, don't cache for obvious reasons
                 return Position.objects.get(secret=pk[2:])
@@ -234,7 +234,7 @@ def get_location_by_slug_for_request(slug: str, request) -> Optional[Union[Locat
         location = get_custom_location_for_request(slug, request)
         if location is None:
             return None
-    elif slug.startswith('p:'):
+    elif slug.startswith('m:'):
         try:
             # return immediately, don't cache for obvious reasons
             return Position.objects.get(secret=slug[2:])
@@ -263,10 +263,10 @@ def get_location_by_slug_for_request(slug: str, request) -> Optional[Union[Locat
 
 
 def get_custom_location_for_request(slug: str, request):
-    match = re.match(r'^c:(?P<level>[a-z0-9-_]+):(?P<x>-?\d+(\.\d+)?):(?P<y>-?\d+(\.\d+)?)$', slug)
+    match = re.match(r'^c:(?P<level>[a-z0-9-_.]+):(?P<x>-?\d+(\.\d+)?):(?P<y>-?\d+(\.\d+)?)$', slug)
     if match is None:
         return None
-    level = levels_by_short_label_for_request(request).get(match.group('level'))
+    level = levels_by_level_index_for_request(request).get(match.group('level'))
     if not isinstance(level, Level):
         return None
     return CustomLocation(level, float(match.group('x')), float(match.group('y')),
@@ -291,7 +291,7 @@ class CustomLocation:
     def __post_init__(self):
         x = round(self.x, 2)
         y = round(self.y, 2)
-        self.pk = 'c:%s:%s:%s' % (self.level.short_label, x, y)
+        self.pk = 'c:%s:%s:%s' % (self.level.level_index, x, y)
 
     @property
     def serialized_geometry(self):
@@ -398,7 +398,7 @@ class CustomLocation:
     @cached_property
     def title_subtitle(self):
         grid_square = self.grid_square
-        level_subtitle = self.level.title if not grid_square else ','.join((grid_square, str(self.level.title)))
+        level_subtitle = self.level.title if not grid_square else ', '.join((grid_square, str(self.level.title)))
 
         title = _('In %(level)s') % {'level': self.level.title}
         if not self.space:

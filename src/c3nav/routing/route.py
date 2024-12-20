@@ -1,9 +1,17 @@
 # flake8: noqa
 from collections import OrderedDict, deque
+from dataclasses import dataclass
 
+from typing import TYPE_CHECKING, Sequence, Optional, Mapping, NamedTuple, Union
 import numpy as np
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+
+from c3nav.mapdata.models import Location
+from c3nav.routing.models import RouteOptions
+
+if TYPE_CHECKING:
+    from c3nav.routing.router import Router, RouterPoint, RouterNode, RouterEdge
 
 
 def describe_location(location, locations):
@@ -18,29 +26,37 @@ def describe_location(location, locations):
     return location
 
 
+class RouteNodeWithOptionalEdge(NamedTuple):
+    node: Union[int, "RouterNode"]
+    edge: Optional["RouterEdge"]
+
+
+@dataclass
 class Route:
-    def __init__(self, router, origin, destination, path_nodes, options,
-                 origin_addition, destination_addition, origin_xyz, destination_xyz,
-                 visible_locations):
-        self.router = router
-        self.origin = origin
-        self.destination = destination
-        self.path_nodes = path_nodes
-        self.options = options
-        self.origin_addition = origin_addition
-        self.destination_addition = destination_addition
-        self.origin_xyz = origin_xyz
-        self.destination_xyz = destination_xyz
-        self.visible_locations = visible_locations
+    router: "Router"
+    origin: "RouterPoint"
+    destination: "RouterPoint"
+    path_nodes: Sequence[int]
+    options: RouteOptions
+    origin_addition: Optional["RouterNodeAndEdge"]
+    destination_addition: Optional["RouterNodeAndEdge"]
+    origin_xyz: np.ndarray | None
+    destination_xyz: np.ndarray | None
+    visible_locations: Mapping[int, Location]
 
     def serialize(self):  # todo: move this into schema
-        nodes = [[node, None] for node in self.path_nodes]
+        nodes: list[RouteNodeWithOptionalEdge] = [
+            RouteNodeWithOptionalEdge(node=node, edge=None) for node in self.path_nodes
+        ]
         if self.origin_addition and any(self.origin_addition):
-            nodes.insert(0, (self.origin_addition[0], None))
-            nodes[1][1] = self.origin_addition[1]
+            nodes.insert(0, RouteNodeWithOptionalEdge(node=self.origin_addition.node, edge=None))
+            nodes[1] = RouteNodeWithOptionalEdge(node=nodes[1].node, edge=self.origin_addition.edge)
         if self.destination_addition and any(self.destination_addition):
-            nodes.append(self.destination_addition)
+            nodes.append(
+                RouteNodeWithOptionalEdge(node=self.destination_addition.node, edge=self.destination_addition.edge)
+            )
 
+        # calculate distances from origin and destination to the origin and destination nodes
         if self.origin_xyz is not None:
             node = nodes[0][0]
             if not hasattr(node, 'xyz'):
@@ -57,7 +73,7 @@ class Route:
         else:
             destination_distance = 0
 
-        items = deque()
+        items: deque[RouteItem] = deque()
         last_node = None
         last_item = None
         walk_factor = self.options.walk_factor
