@@ -750,6 +750,11 @@ def report_detail(request, pk, secret=None):
         'update_form': update_form,
     })
 
+def live_list(request):
+    return render(request, 'site/live_list.html', {
+        'positions': Position.objects.filter(owner=request.user),
+        'user_data_json': json.dumps(get_user_data(request), cls=DjangoJSONEncoder),
+    })
 
 @login_required(login_url='site.login')
 def position_list(request):
@@ -757,7 +762,6 @@ def position_list(request):
         'positions': Position.objects.filter(owner=request.user),
         'user_data_json': json.dumps(get_user_data(request), cls=DjangoJSONEncoder),
     })
-
 
 @login_required(login_url='site.login')
 def position_create(request):

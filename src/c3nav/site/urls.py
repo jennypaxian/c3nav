@@ -5,7 +5,7 @@ from django.urls import path, register_converter
 from c3nav.site.converters import AtPositionConverter, CoordinatesConverter, IsEmbedConverter
 from c3nav.site.views import (about_view, access_redeem_view, account_manage, account_view, api_secret_create,
                               api_secret_list, change_password_view, choose_language, delete_account_view, login_view,
-                              logout_view, map_index, position_create, position_detail, position_list, position_set,
+                              logout_view, map_index, live_list, position_create, position_detail, position_list, position_set,
                               qr_code, register_view, report_create, report_detail, report_list,
                               report_start_coordinates, report_start_location, report_start_route, report_missing_check,
                               report_select_location, report_missing_choose)
@@ -64,6 +64,7 @@ urlpatterns = [
     path('report/create/l/<coords:coordinates>/<str:group>/', report_create, name='site.report_create'),
     path('report/create/l/<int:location>/', report_create, name='site.report_create'),
     path('report/create/r/<str:origin>/<str:destination>/<str:options>/', report_create, name='site.report_create'),
+    path('live/', live_list, name='site.live_list'),
     path('positions/', position_list, name='site.position_list'),
     path('positions/create/', position_create, name='site.position_create'),
     path('positions/<int:pk>/', position_detail, name='site.position_detail'),

@@ -2978,3 +2978,45 @@ class DataOverlay {
 
 
 }
+
+class PawssAES {
+
+}
+
+class PawssPrime {
+
+}
+
+class PawssRSA {
+    
+}
+
+class PawssProto {
+    async generate_payload(msg, type, in_seq, out_seq) {
+
+    }
+
+    async hash_payload(key, payload) {
+
+    }
+
+    async generate_key(keysize) {
+
+    }
+
+    async generate_kdf(key,hash) {
+
+    }
+
+    async encrypt_ige(key, iv) {
+
+    }
+
+    async generate_fingerprint(hash_payload) {
+
+    }
+
+    async construct_frame(fingerprint, key, enc_data) {
+
+    }
+}

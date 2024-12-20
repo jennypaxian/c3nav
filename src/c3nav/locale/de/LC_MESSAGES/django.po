@@ -3738,6 +3738,10 @@ msgid "Manage custom positions"
 msgstr "Positionen verwalten"
 
 #: c3nav/site/templates/site/account.html
+msgid "Manage live-locations"
+msgstr "Live-Standorte verwalten"
+
+#: c3nav/site/templates/site/account.html
 msgid "Manage API secrets"
 msgstr "API-Secrets verwalten"
 
