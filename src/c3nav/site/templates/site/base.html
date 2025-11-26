@@ -83,6 +83,7 @@
             // Create worker thread for logo
             const _logo_worker = new Worker("{% static header_logo_anim %}");
             var _logo_offscreen = null;
+            var _video = null;
 
             _logo_link.onmouseover = function(){
                 _logo_link.style.visibility = 'hidden';
@@ -93,10 +94,13 @@
                     // This is final now, we can no longer change sizes anyway
                     _logo_canvas_observer.disconnect();
                     _logo_offscreen = _logo_canvas.transferControlToOffscreen();
-
                     // Send the offscreen logo canvas to the worker
                     _logo_worker.postMessage({ canvas: _logo_offscreen }, [_logo_offscreen]);
                 }
+
+                if (_video)
+                    _video.play();
+
                 // Instruct worker to resume animation
                 _logo_worker.postMessage({ pause: false });
 
@@ -117,7 +121,31 @@
                 _logo_worker.postMessage({ pause: true });
 
                 _logo_canvas.onclick = null;
-            }; 
+
+                if (_video)
+                    _video.pause();
+            };
+
+            _logo_worker.addEventListener("message", (e) => {
+                if (e.data.framesource) {
+                    _video = document.createElement('video');
+                    _video.id = 'c3nav-logo-framesource';
+                    _video.src = "{% static '' %}" + e.data.framesource;
+                    _video.muted = true;
+                    _video.autoplay = true;
+                    _video.addEventListener("loadeddata", () => {
+                        function onVideoFrame(now, metadata) {
+                            // Send frame as VideoFrame to worker
+                            const image = new VideoFrame(_video);
+                            _logo_worker.postMessage({ image }, [image]);
+
+                            _video.requestVideoFrameCallback(onVideoFrame);
+                        }
+
+                        _video.requestVideoFrameCallback(onVideoFrame);
+                    });
+                }
+            });
         });
     </script>
     {% endif %}
